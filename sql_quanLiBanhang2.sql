@@ -80,4 +80,49 @@ from orderdetail od
 join product p on p.pID = od.pID
 join porder po on po.oID = od.oID
 join customer cu on cu.cID = po.cID
-group by od.oID
+group by od.oID;
+-- 8.Tạo một view tên là Sales để hiển thị tổng doanh thu của siêu 
+create view sales as 
+select sum(od.odQTY*pPrice) as Sales from 
+orderdetail od 
+join product p on od.pID = p.pID
+join porder po on po.oID = od.oID;
+-- 9.Xóa tất cả các ràng buộc khóa ngoại, khóa chính của tất cả các bảng.
+ SELECT concat('ALTER TABLE ', TABLE_NAME, ' DROP FOREIGN KEY ', CONSTRAINT_NAME, ';') 
+FROM information_schema.key_column_usage 
+WHERE CONSTRAINT_SCHEMA = 'test2' 
+AND referenced_table_name IS NOT NULL;
+-- alter table customer drop foregin key cus_ibfk_1;
+alter table customer modify cid int unique;
+alter table customer drop primary key;
+alter table product modify pid int unique;
+alter table product drop primary key;
+alter table porder modify oid int unique;
+alter table porder drop primary key;
+
+-- 10.	Tạo một trigger tên là cusUpdate trên bảng Customer,
+-- sao cho khi sửa mã khách (cID) thì mã khách trong bảng Order cũng được sửa theo
+create trigger cusUpdate 
+after update on customer 
+for each row update `porder` po set cID = NEW.cid where po.cID = OLD.cid;
+
+
+
+-- 11Tạo một stored procedure tên là delProduct nhận vào 1 tham số là tên của một sản phẩm,
+-- strored procedure này sẽ xóa sản phẩm có tên được truyên vào thông qua tham số,
+-- và các thông tin liên quan đến sản phẩm đó ở trong bảng OrderDetail
+delimiter // 
+
+create procedure delProduct(in name varchar(50))
+begin
+delete from orderdetail where pId = (select pId from product where pname = name);
+delete from product where pname = name;
+
+end //
+delimiter ;
+call delProduct('Tu Lanh');
+select * from orderdetail;
+
+delete from orderdetail where pId = (select pId from product where pname = 'Dieu Hoa');
+
+select pId from product where pname = 'Dieu Hoa';
